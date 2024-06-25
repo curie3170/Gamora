@@ -51,7 +51,7 @@ class GraphSAGE(torch.nn.Module):
         self.mlp1 = MLP([max_num_nodes, hidden_dim, 1],
                        norm=None, dropout=0.5) #instead of global_mean_pool
         self.bn = BatchNorm(hidden_dim)
-        self.fc = Linear(hidden_dim, hidden_dim)
+        #self.fc = Linear(hidden_dim, hidden_dim)
         self.mlp2 = MLP([hidden_dim, hidden_dim, out_dim],
                        norm=None, dropout=0.5)
 
@@ -63,7 +63,7 @@ class GraphSAGE(torch.nn.Module):
             x = F.dropout(x, p=self.dropout) #torch.Size([58666, hidden_dim])
         
         #x = global_mean_pool(x, data.batch) # torch.Size([batch, hidden_dim])
-        x = x.reshape([-1,x.shape[1],self.max_num_nodes])
+        x = x.reshape([-1,x.shape[1],self.max_num_nodes]) #[32, 75, 1994]
         x = self.mlp1(x).squeeze(2) #[32, 75]
         #x = self.fc(x) # torch.Size([batch, hidden_dim])
         x = self.bn(x)
@@ -107,8 +107,6 @@ def test(gamora_model, model, loader, device, dataset):
         correct_all+= torch.eq(pred, data.y.reshape(-1, dataset.num_classes)).all(dim=1).sum().item()
         total += data.y.reshape(-1, dataset.num_classes).numel()
         total_all += len(torch.eq(pred, data.y.reshape(-1, dataset.num_classes)).all(dim=1))
-    print(total)
-    print(total_all)
     return correct / total, correct_all / total_all
 
 def main(args):
