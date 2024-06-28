@@ -10,10 +10,10 @@ from torch_geometric.loader import DataLoader
 #from loader.dataloader import DataLoader
 from tqdm import tqdm
 
-class EdgeListDataset(InMemoryDataset):
+class EdgeListPaddingDataset(InMemoryDataset):
     def __init__(self, root, transform=None, pre_transform=None, highest_order = 16):
         self.highest_order = highest_order
-        super(EdgeListDataset, self).__init__(root, transform, pre_transform, highest_order)
+        super(EdgeListPaddingDataset, self).__init__(root, transform, pre_transform, highest_order)
         self.data, self.slices = torch.load(self.processed_paths[0])
         #self.max_num_nodes = 0
         print(self.data is not None)
@@ -125,7 +125,7 @@ class EdgeListDataset(InMemoryDataset):
         return max_num_nodes
     
 if __name__ == '__main__':
-    dataset = EdgeListDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16) #, transform=T.ToSparseTensor())
+    dataset = EdgeListPaddingDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16) #, transform=T.ToSparseTensor())
     print(dataset[0])
     print(dataset[1])
     '''

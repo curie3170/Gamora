@@ -104,14 +104,15 @@ class HOGA(torch.nn.Module):
 
     def forward(self, x):
         x = self.lins[0](x)
-        print(x.size())
+        #print(x.size())
         for i, tran in enumerate(self.trans):
             x = self.lns[i](self.gates[i](x)*(tran(x, x, x)[0]))
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
-
-        target = x[:,0,:].unsqueeze(1).repeat(1,self.num_hops-1,1)
-        split_tensor = torch.split(x, [1, self.num_hops-1], dim=1)
+        #x.shape: [456, 9 ,256]
+        #x.shape이 [770, 770, 256] ?? 
+        target = x[:,0,:].unsqueeze(1).repeat(1,self.num_hops-1,1)#[456, 8 ,256] -> [770, 8, 256]
+        split_tensor = torch.split(x, [1, self.num_hops-1], dim=1) #[0]: [456, 1, 256], [1]: [456, 8, 256]
         node_tensor = split_tensor[0]
         neighbor_tensor = split_tensor[1]
         layer_atten = self.attn_layer(torch.cat((target, neighbor_tensor), dim=2))

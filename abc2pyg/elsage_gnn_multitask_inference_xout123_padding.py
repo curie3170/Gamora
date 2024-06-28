@@ -23,7 +23,7 @@ from elsage.el_sage_baseline_xout123_padding import train as train_el
 from elsage.el_sage_baseline_xout123_padding import test as test_el
 from sklearn.model_selection import train_test_split
 #from dataset_prep.dataloader_padding import DataLoader, Custom_Collater
-from dataset_prep.dataset_el_pyg_padding import EdgeListDataset
+from dataset_prep.dataset_el_pyg_padding import EdgeListPaddingDataset
 from torch_geometric.loader import DataLoader
 from datetime import datetime
 
@@ -161,7 +161,7 @@ def main():
     
     #args for elsage
     parser.add_argument('--root', type=str, default='/home/curie/masGen/DataGen/dataset16', help='Root directory of dataset')
-    parser.add_argument('--highest_order', type=int, default=16, help='Highest order for the EdgeListDataset')
+    parser.add_argument('--highest_order', type=int, default=16, help='Highest order for the EdgeListPaddingDataset')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=500, help='Number of epochs')
     #parser.add_argument('--num_layers', type=int, default=4) # x + gamora_output
@@ -176,7 +176,7 @@ def main():
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     ### evaluation dataset loading
-    dataset = EdgeListDataset(root = args.root, highest_order = args.highest_order)
+    dataset = EdgeListPaddingDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
     data = T.ToSparseTensor()(data)
     split_idx = 0 #random

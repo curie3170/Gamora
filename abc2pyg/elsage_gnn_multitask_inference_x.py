@@ -204,7 +204,9 @@ def main():
     optimizer = torch.optim.Adam(elsage_model.parameters(), args.learning_rate)#, weight_decay=5e-4)
     
     for args.epoch in range(1, args.epochs + 1):
+        start_time = time.time()
         loss, train_acc = train_el(elsage_model, train_loader, optimizer, device, dataset)
+        print("--- Train time: %s seconds ---" % (time.time() - start_time))
         if args.epoch % 1 == 0:
             val_acc = test_el(elsage_model, val_loader, device, dataset)
             test_acc = test_el(elsage_model, val_loader, device, dataset)

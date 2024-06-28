@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from torch.nn import Linear
 import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
-from dataset_prep.dataset_el_pyg_cone import EdgeListDataset
+from dataset_prep.dataset_el_pyg_cone import EdgeListConeDataset
 #from loader.dataset_el_pyg import EdgeListDataset
 import numpy as np
 import wandb
@@ -147,8 +147,8 @@ def test_ensemble_full(models, loader, device, dataset, bit):
 
 def main(args):
     initialize_wandb(args)
-    dataset = EdgeListDataset(root=args.root, highest_order=args.highest_order, PO_bit=args.PO_bit)
-    #dataset = EdgeListDataset(root=args.root, highest_order=args.highest_order)
+    dataset = EdgeListConeDataset(root=args.root, highest_order=args.highest_order, PO_bit=args.PO_bit)
+    #dataset = EdgeListConeDataset(root=args.root, highest_order=args.highest_order)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(len(dataset))
     print(dataset[0])
@@ -212,7 +212,7 @@ if __name__ == '__main__':
     import argparse 
     parser = argparse.ArgumentParser(description='ELGraphSAGE Training')
     parser.add_argument('--root', type=str, default='/home/curie/masGen/DataGen/dataset16', help='Root directory of dataset')
-    parser.add_argument('--highest_order', type=int, default=16, help='Highest order for the EdgeListDataset')
+    parser.add_argument('--highest_order', type=int, default=16, help='Highest order for the EdgeListConeDataset')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=500, help='Number of epochs')
     parser.add_argument('--num_layers', type=int, default=4)

@@ -16,6 +16,7 @@ from dataset_prep import PygNodePropPredDataset, Evaluator
 from hoga_model import HOGA
 
 
+    
 #torch.set_num_threads(80)
 torch.manual_seed(0)
 
@@ -93,9 +94,9 @@ def main():
     data_r = T.ToSparseTensor()(data_r)
 
     dataset = PygNodePropPredDataset(name=design_name + '_shared')#, root=root_path)
-    data = dataset[0]
-    data = preprocess(data, args)
-    data = T.ToSparseTensor()(data)
+    data = dataset[0] #Data(num_nodes=456, edge_index=[2, 880], x=[456, 4], y=[456, 1])
+    data = preprocess(data, args) #Data(num_nodes=456, edge_index=[2, 1759], x=[456, 9, 4], y=[456, 1])
+    data = T.ToSparseTensor()(data) #Data(num_nodes=456, x=[456, 9, 4], y=[456, 1], adj_t=[456, 456, nnz=1759])
     split_idx = dataset.get_idx_split()
     train_idx = split_idx['train']#.to(device)
     valid_idx = split_idx['valid']#.to(device)
@@ -167,6 +168,7 @@ def main():
 
     ## load pre-trained model
     if args.save_model:
+        model_name = f'models/hoga_{design_name}_{args.design}.pt'
         checkpoint = torch.load(model_name)
         model.load_state_dict(checkpoint['model_state_dict'])
 
@@ -208,7 +210,7 @@ def main():
                     train_acc_r, valid_acc_r, test_acc_r, train_acc_s, valid_acc_s, test_acc_s = result
                     print(f'Run: {run_1 + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
-                          f'Loss: {loss:.4f}, '
+                          #f'Loss: {loss:.4f}, '
                           f'[Root Model] Train: {100 * train_acc_r:.2f}%, '
                           f'[Root Model] Valid: {100 * valid_acc_r:.2f}% '
                           f'[Root Model] Test: {100 * test_acc_r:.2f}% '

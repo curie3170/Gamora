@@ -9,11 +9,11 @@ from typing import List
 from torch_geometric.loader import DataLoader
 #from loader.dataloader import DataLoader
 
-class EdgeListDataset(InMemoryDataset):
+class EdgeListConeDataset(InMemoryDataset):
     def __init__(self, root, transform=None, pre_transform=None, highest_order = 16, PO_bit=0):
         self.highest_order = highest_order
         self.PO_bit = PO_bit
-        super(EdgeListDataset, self).__init__(root, transform, pre_transform, highest_order)
+        super(EdgeListConeDataset, self).__init__(root, transform, pre_transform, highest_order)
         print(f'Load dataset {self.processed_paths[0]}')
         self.data, self.slices = torch.load(self.processed_paths[0])
 
@@ -90,7 +90,7 @@ class EdgeListDataset(InMemoryDataset):
 if __name__ == '__main__':
     #Generate processed data for each cone
     for i in range(16):
-        dataset = EdgeListDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16, PO_bit=i) 
+        dataset = EdgeListConeDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16, PO_bit=i) 
         
     '''
     print(dataset[0])

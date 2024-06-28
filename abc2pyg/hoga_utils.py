@@ -23,6 +23,7 @@ def graph2adj(adj):
 def preprocess(data, args):
     print("Preprocessing node features!!!!!!")
     nnodes = data.x.shape[0]
+    data.x_ori = data.x
     if not args.directed:
         data.edge_index = to_undirected(data.edge_index, nnodes)
         row, col = data.edge_index
@@ -32,12 +33,12 @@ def preprocess(data, args):
         norm_adj = SparseTensor.from_scipy(DAD).float()
         feat_lst = []
         feat_lst.append(data.x)
-        high_order_features = data.x.clone()
+        high_order_features = data.x.clone() #[456, 4]
         for _ in range(args.num_hops):
             high_order_features = norm_adj @ high_order_features
             #data.x = torch.cat((data.x, high_order_features), dim=1)
             feat_lst.append(high_order_features)
-        data.x = torch.stack(feat_lst, dim=1)
+        data.x = torch.stack(feat_lst, dim=1) #[456, 9, 4]
         #data.num_features *= (1+args.num_hops)
     else:
         row, col = data.edge_index

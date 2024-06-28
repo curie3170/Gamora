@@ -5,14 +5,13 @@ from torch_geometric.nn import SAGEConv, to_hetero
 from torch_geometric.loader import NeighborSampler
 from torch_geometric.data import DataLoader
 from torch_geometric.nn import MLP,SAGEConv, global_mean_pool, BatchNorm
-from torch_geometric.data import Data
 from torch_geometric.transforms import ToSparseTensor
 from torch_geometric.datasets import Planetoid
 from torch_geometric.utils import to_undirected
 from torch_sparse import SparseTensor
 from sklearn.model_selection import train_test_split
 from torch.nn import Linear
-from torch_geometric.loader import DataLoader
+#from torch_geometric.loader import DataLoader
 import torch_geometric.transforms as T
 from dataset_prep.dataset_el_pyg import EdgeListDataset
 

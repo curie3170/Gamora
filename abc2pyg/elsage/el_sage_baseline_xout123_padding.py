@@ -13,7 +13,6 @@ from sklearn.model_selection import train_test_split
 from torch.nn import Linear
 from torch_geometric.loader import DataLoader
 #from dataset_prep.dataloader_padding import DataLoader, Custom_Collater
-from dataset_prep.dataset_el_pyg_padding import EdgeListDataset
 import torch_geometric.transforms as T
 import wandb
 torch.manual_seed(0)

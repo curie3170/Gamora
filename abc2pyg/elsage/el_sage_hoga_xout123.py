@@ -3,18 +3,15 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import SAGEConv, to_hetero
 from torch_geometric.loader import NeighborSampler
-from torch_geometric.data import DataLoader
-from torch_geometric.nn import GraphSAGE, MLP,SAGEConv, global_mean_pool, BatchNorm
-from torch_geometric.data import Data
-from torch_geometric.transforms import ToSparseTensor
-from torch_geometric.datasets import Planetoid
+from torch_geometric.nn import MLP,SAGEConv, global_mean_pool, BatchNorm
 from torch_geometric.utils import to_undirected
 from torch_sparse import SparseTensor
 from sklearn.model_selection import train_test_split
 from torch.nn import Linear
-from torch_geometric.loader import DataLoader
+from torch_geometric.data import DataLoader
 import torch_geometric.transforms as T
 from dataset_prep.dataset_el_pyg import EdgeListDataset
+import time
 
 import wandb
 def initialize_wandb(args):
@@ -56,9 +53,8 @@ class GraphSAGE(torch.nn.Module):
 
     
     def forward(self, data, gamora_output):
-        #x = data.x
-        #x = torch.cat((gamora_output[0], gamora_output[1], gamora_output[2]), 1)
-        x = torch.cat((data.x, gamora_output[0], gamora_output[1], gamora_output[2]), 1)
+        x = torch.cat((data.x_ori, gamora_output[0], gamora_output[1], gamora_output[2]), 1)
+        #x = data.x_ori
         for conv, bn in zip(self.convs, self.bns):
             x = conv(x, data.adj_t)
             x = bn(x)
@@ -78,10 +74,8 @@ def train(gamora_model, model, loader, optimizer, device, dataset):
     total_loss = 0
     criterion = torch.nn.BCEWithLogitsLoss() #sigmoid + BCE
     for data in loader:
-        print(data.x.size())
         data = data.to(device)
         out1, out2, out3, _ = gamora_model(data.x)
-        print(out1.shape())
         optimizer.zero_grad()
         out = model(data,[out1, out2, out3])
         loss = criterion(out, data.y.reshape(-1, dataset.num_classes))

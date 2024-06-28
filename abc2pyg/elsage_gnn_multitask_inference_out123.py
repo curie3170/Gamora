@@ -25,7 +25,7 @@ from elsage.el_sage_baseline_out123 import train as train_el
 from elsage.el_sage_baseline_out123 import test as test_el
 from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader
-
+torch.manual_seed(0)
 
 import wandb
 def initialize_wandb(args):
