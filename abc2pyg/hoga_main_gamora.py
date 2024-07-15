@@ -133,7 +133,7 @@ def main():
                     best_test_r = test_acc_r
                     best_test_s = test_acc_s
                     if args.save_model:
-                        model_name = f'models/hoga_{design_name}_{args.design}.pt'
+                        model_name = f'models/hoga_{design_name}_{args.design}_{args.num_hops}.pt'
                         torch.save({'model_state_dict': model.state_dict()}, model_name)
                 print(f'Run: {run + 1:02d}, '
                       f'Epoch: {epoch:02d}, '
@@ -224,7 +224,7 @@ def main():
         ## save results
         if not os.path.exists(f'results/hoga'):
             os.makedirs(f'results/hoga')
-        filename = f'results/hoga/{args.design}.csv'
+        filename = f'results/hoga/{args.design}_{args.num_hops}.csv'
         print(f"Saving results to {filename}")
         with open(f"{filename}", 'a+') as write_obj:
             write_obj.write(

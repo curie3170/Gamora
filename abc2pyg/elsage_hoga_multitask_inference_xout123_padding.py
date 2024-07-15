@@ -9,7 +9,8 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import SAGEConv, global_mean_pool, BatchNorm
 
 from dataset_prep import PygNodePropPredDataset, Evaluator
-from dataset_prep.dataset_el_pyg import EdgeListDataset
+from dataset_prep.dataset_el_pyg_padding import EdgeListPaddingDataset
+from dataset_prep.dataset_gl_pyg_padding import LogicGatePaddingDataset
 
 from logger import Logger
 from tqdm import tqdm
@@ -21,9 +22,9 @@ import matplotlib.pyplot as plt
 from mlxtend.plotting import plot_confusion_matrix
 import time
 import copy
-from elsage.el_sage_hoga_xout123 import GraphSAGE
-from elsage.el_sage_hoga_xout123 import train as train_el
-from elsage.el_sage_hoga_xout123 import test as test_el
+from elsage.el_sage_hoga_xout123_padding import GraphSAGE
+from elsage.el_sage_hoga_xout123_padding import train as train_el
+from elsage.el_sage_hoga_xout123_padding import test as test_el
 from sklearn.model_selection import train_test_split
 from torch_geometric.data import DataLoader
 from hoga_model import HOGA
@@ -65,10 +66,10 @@ def initialize_wandb(args):
         
 
 def main():
-    #args for HOGA
     parser = argparse.ArgumentParser(description='elsage_hoga')
+    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic'])
     parser.add_argument('--device', type=int, default=0)
-
+    #args for HOGA
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--model_path', type=str, default='models/hoga_mult8_mult.pt')
@@ -81,7 +82,7 @@ def main():
     #args for elsage
     parser.add_argument('--num_layers', type=int, default=4)
     parser.add_argument('--root', type=str, default='/home/curie/masGen/DataGen/dataset8', help='Root directory of dataset')
-    parser.add_argument('--highest_order', type=int, default=8, help='Highest order for the EdgeListDataset')
+    parser.add_argument('--highest_order', type=int, default=8, help='Highest order for the EdgeListPaddingDataset')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=500, help='Number of epochs')
     #parser.add_argument('--num_layers', type=int, default=4) # x + gamora_output
@@ -96,7 +97,11 @@ def main():
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     ### evaluation dataset loading
-    dataset = EdgeListDataset(root = args.root, highest_order = args.highest_order)
+    if args.datatype == 'aig':
+        dataset = EdgeListPaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'logic':
+        dataset = LogicGatePaddingDataset(root = args.root, highest_order = args.highest_order)
+    processed_dataset = ProcessedSparseDataset(dataset, args) 
     processed_dataset = ProcessedSparseDataset(dataset, args) 
 
     train_dataset, test_dataset = train_test_split(processed_dataset, test_size=0.2, random_state=42)
@@ -113,25 +118,27 @@ def main():
     hoga_model = HOGA(data.num_features, args.hoga_hidden_channels, 3, args.hoga_num_layers,
             args.dropout, num_hops=args.num_hops+1, heads=args.heads).to(device)
     hoga_model.load_state_dict(torch.load(args.model_path)['model_state_dict'])
-    
+    max_num_nodes = dataset.find_max_num_nodes()
     elsage_model = GraphSAGE(in_dim=13, #dataset[0].num_node_features,#13, #9 for gamora_output
                  hidden_dim=args.hidden_dim, 
                  out_dim=dataset.num_classes,
+                 max_num_nodes = max_num_nodes,
                  num_layers=args.num_layers,
                  dropout=args.dropout
                  ).to(device)
     optimizer = torch.optim.Adam(elsage_model.parameters(), args.lr)#, weight_decay=5e-4)
-    import time
-    for args.epoch in range(1, args.epochs + 1):
+
+    for epoch in range(1, args.epochs + 1):
         start_time = time.time()
-        loss, train_acc = train_el(hoga_model, elsage_model, train_loader, optimizer, device, dataset)
+        loss, train_acc, train_all_bits = train_el(hoga_model, elsage_model, train_loader, optimizer, device, dataset)
         print("--- Train time: %s seconds ---" % (time.time() - start_time))
-        if args.epoch % 1 == 0:
-            val_acc = test_el(hoga_model, elsage_model, val_loader, device, dataset)
-            test_acc = test_el(hoga_model, elsage_model, test_loader, device, dataset)
-            wandb.log({"Epoch": args.epoch, "Loss": loss, "Train_acc": train_acc, "Val_acc":val_acc, "Test_acc": test_acc})
-            print(f'Epoch: {args.epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}')
-    
+        if epoch % 1 == 0:
+            val_acc, val_acc_all_bits = test_el(hoga_model, elsage_model, val_loader, device, dataset)
+            test_acc, test_acc_all_bits = test_el(hoga_model, elsage_model, test_loader, device, dataset)
+            wandb.log({"Epoch": epoch, "Loss": loss, "Train_acc": train_acc, "Train_acc_all_bits": train_all_bits, 
+                       "Val_acc":val_acc, "Test_acc": test_acc, "Val_acc_all_bits":val_acc_all_bits, "Test_acc_all_bits": test_acc_all_bits})
+            print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}, Train acc all bits: {train_all_bits:.4f}, Val acc all bits: {val_acc_all_bits:.4f}, Test acc all bits: {test_acc_all_bits:.4f}')
+                
     
 if __name__ == "__main__":
     main()

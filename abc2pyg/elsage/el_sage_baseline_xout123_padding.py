@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 from torch.nn import Linear
 from torch_geometric.loader import DataLoader
 #from dataset_prep.dataloader_padding import DataLoader, Custom_Collater
+from dataset_prep.dataset_el_pyg import EdgeListDataset
 import torch_geometric.transforms as T
 import wandb
 torch.manual_seed(0)
@@ -146,7 +147,7 @@ def main(args):
             val_acc, val_acc_all_bits = test(model, val_loader, device, dataset)
             test_acc, test_acc_all_bits = test(model, test_loader, device, dataset)
             wandb.log({"Epoch": epoch, "Loss": loss, "Train_acc": train_acc, "Train_acc_all_bits": train_all_bits, 
-                       "Val_acc":val_acc, "Test_acc": test_acc, "Val_acc_all_bits":val_acc_all_bits, "Test_acc": test_acc_all_bits})
+                       "Val_acc":val_acc, "Test_acc": test_acc, "Val_acc_all_bits":val_acc_all_bits, "Test_acc_all_bits": test_acc_all_bits})
             print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}, Train acc all bits: {train_all_bits:.4f}, Val acc all bits: {val_acc_all_bits:.4f}, Test acc all bits: {test_acc_all_bits:.4f}')
             
     
