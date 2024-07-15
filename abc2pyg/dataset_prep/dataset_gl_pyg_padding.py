@@ -127,7 +127,7 @@ class LogicGatePaddingDataset(InMemoryDataset):
         return max_num_nodes
     
 if __name__ == '__main__':
-    dataset = EdgeListPaddingDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16) #, transform=T.ToSparseTensor())
+    dataset = LogicGatePaddingDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16) #, transform=T.ToSparseTensor())
     print(dataset[0])
     print(dataset[1])
     '''

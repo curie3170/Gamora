@@ -9,6 +9,7 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import SAGEConv, global_mean_pool, BatchNorm
 
 from dataset_prep import PygNodePropPredDataset, Evaluator, EdgeListDataset
+from dataset_prep.dataset_gl_pyg import LogicGateDataset
 
 from logger import Logger
 from tqdm import tqdm
@@ -150,9 +151,10 @@ class SAGE_MULT(torch.nn.Module):
      
     
 def main():
-    #args for gamora
     parser = argparse.ArgumentParser(description='mult16')
+    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic'])
     parser.add_argument('--device', type=int, default=0)
+    #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
     parser.add_argument('--hidden_channels', type=int, default=32)
     parser.add_argument('--dropout', type=float, default=0.5)
@@ -175,7 +177,10 @@ def main():
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     ### evaluation dataset loading
-    dataset = EdgeListDataset(root = args.root, highest_order = args.highest_order)
+    if args.datatype == 'aig':
+        dataset = EdgeListDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'logic':
+        dataset = LogicGateDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
     data = T.ToSparseTensor()(data)
     

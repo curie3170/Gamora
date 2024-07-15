@@ -24,6 +24,7 @@ from elsage.el_sage_baseline_xout123_padding import test as test_el
 from sklearn.model_selection import train_test_split
 #from dataset_prep.dataloader_padding import DataLoader, Custom_Collater
 from dataset_prep.dataset_el_pyg_padding import EdgeListPaddingDataset
+from dataset_prep.dataset_gl_pyg_padding import LogicGatePaddingDataset
 from torch_geometric.loader import DataLoader
 from datetime import datetime
 
@@ -151,9 +152,10 @@ class SAGE_MULT(torch.nn.Module):
      
     
 def main():
-    #args for gamora
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--device', type=int, default=0)
+    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic'])
+    #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
     parser.add_argument('--hidden_channels', type=int, default=32)
     parser.add_argument('--dropout', type=float, default=0.5)
@@ -176,7 +178,10 @@ def main():
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     ### evaluation dataset loading
-    dataset = EdgeListPaddingDataset(root = args.root, highest_order = args.highest_order)
+    if args.datatype == 'aig':
+        dataset = EdgeListPaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'logic':
+        dataset = LogicGatePaddingDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
     data = T.ToSparseTensor()(data)
     split_idx = 0 #random

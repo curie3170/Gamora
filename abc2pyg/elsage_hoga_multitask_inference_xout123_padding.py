@@ -102,7 +102,6 @@ def main():
     elif  args.datatype == 'logic':
         dataset = LogicGatePaddingDataset(root = args.root, highest_order = args.highest_order)
     processed_dataset = ProcessedSparseDataset(dataset, args) 
-    processed_dataset = ProcessedSparseDataset(dataset, args) 
 
     train_dataset, test_dataset = train_test_split(processed_dataset, test_size=0.2, random_state=42)
     train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.2, random_state=42)
