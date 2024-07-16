@@ -132,7 +132,7 @@ def main(args):
 
     max_num_nodes = dataset.find_max_num_nodes()
     
-    model = GraphSAGE(in_dim=dataset[0].num_node_features, 
+    model = GraphSAGE(in_dim=13, 
                  hidden_dim=args.hidden_dim, 
                  out_dim=dataset.num_classes,
                  max_num_nodes = max_num_nodes,

@@ -92,30 +92,20 @@ class EdgeListDataset(InMemoryDataset):
         torch.save((data, slices), self.processed_paths[0])
 
 if __name__ == '__main__':
-    dataset = EdgeListDataset(root = '/home/curie/ELGraphSAGE/dataset/edgelist', highest_order = 16) #, transform=T.ToSparseTensor())
+    dataset = EdgeListDataset(root = '/home/curie/masGen/DataGen/dataset4', highest_order = 4) #, transform=T.ToSparseTensor())
     print(dataset[0])
     print(dataset[1])
-    '''
-    dataloader = DataLoader(dataset, dataset, batch_size=32)
+    print(dataset[2])
+    print(dataset[3])
+
+    # dataloader = DataLoader(dataset, batch_size=32)
     
-    from sklearn.model_selection import train_test_split
-    train_dataset, test_dataset = train_test_split(dataset, test_size=0.2, random_state=42)
-    train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.2, random_state=42)
+    # from sklearn.model_selection import train_test_split
+    # train_dataset, test_dataset = train_test_split(dataset, test_size=0.2, random_state=42)
+    # train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.2, random_state=42)
     
-    train_loader = DataLoader(dataset, train_dataset, batch_size=32, shuffle=True)
-    val_loader= DataLoader(dataset, val_dataset, batch_size=32, shuffle=False)
-    test_loader= DataLoader(dataset, test_dataset, batch_size=32, shuffle=False)
-    for batch in train_loader:
-        print(batch)
-    '''
-    dataloader = DataLoader(dataset, batch_size=32)
-    
-    from sklearn.model_selection import train_test_split
-    train_dataset, test_dataset = train_test_split(dataset, test_size=0.2, random_state=42)
-    train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.2, random_state=42)
-    
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    val_loader= DataLoader(val_dataset, batch_size=32, shuffle=False)
-    test_loader= DataLoader(test_dataset, batch_size=32, shuffle=False)
-    for batch in train_loader:
-        print(batch)
+    # train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    # val_loader= DataLoader(val_dataset, batch_size=32, shuffle=False)
+    # test_loader= DataLoader(test_dataset, batch_size=32, shuffle=False)
+    # for batch in train_loader:
+    #     print(batch)

@@ -209,7 +209,6 @@ def main():
                      args.dropout).to(device)
     gamora_model.load_state_dict(torch.load(args.model_path))
     max_num_nodes = dataset.find_max_num_nodes()
-    print(max_num_nodes)
     elsage_model = GraphSAGE(in_dim=13,#dataset[0].num_node_features, #9 for gamora_output
                  hidden_dim=args.hidden_dim, 
                  out_dim=dataset.num_classes,

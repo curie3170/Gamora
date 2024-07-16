@@ -182,6 +182,7 @@ def main():
     elif  args.datatype == 'logic':
         dataset = LogicGateDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
+    print(data)
     data = T.ToSparseTensor()(data)
     
     train_dataset, test_dataset = train_test_split(dataset, test_size=0.2, random_state=42)
@@ -206,14 +207,15 @@ def main():
 
     optimizer = torch.optim.Adam(elsage_model.parameters(), args.learning_rate)#, weight_decay=5e-4)
     
-    for args.epoch in range(1, args.epochs + 1):
-        loss, train_acc = train_el(gamora_model, elsage_model, train_loader, optimizer, device, dataset)
-        if args.epoch % 1 == 0:
-            val_acc = test_el(gamora_model, elsage_model, val_loader, device, dataset)
-            test_acc = test_el(gamora_model, elsage_model, test_loader, device, dataset)
-            wandb.log({"Epoch": args.epoch, "Loss": loss, "Train_acc": train_acc, "Val_acc":val_acc, "Test_acc": test_acc})
-            print(f'Epoch: {args.epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}')
-    
+    for epoch in range(1, args.epochs + 1):
+        loss, train_acc, train_all_bits = train_el(gamora_model, elsage_model, train_loader, optimizer, device, dataset)
+        if epoch % 1 == 0:
+            val_acc, val_acc_all_bits = test_el(gamora_model, elsage_model, val_loader, device, dataset)
+            test_acc, test_acc_all_bits = test_el(gamora_model, elsage_model, test_loader, device, dataset)
+            wandb.log({"Epoch": epoch, "Loss": loss, "Train_acc": train_acc, "Train_acc_all_bits": train_all_bits, 
+                       "Val_acc":val_acc, "Test_acc": test_acc, "Val_acc_all_bits":val_acc_all_bits, "Test_acc_all_bits": test_acc_all_bits})
+            print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}, Train acc all bits: {train_all_bits:.4f}, Val acc all bits: {val_acc_all_bits:.4f}, Test acc all bits: {test_acc_all_bits:.4f}')
+            
     
 if __name__ == "__main__":
     main()

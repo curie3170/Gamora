@@ -126,17 +126,15 @@ def main():
                  dropout=args.dropout
                  ).to(device)
     optimizer = torch.optim.Adam(elsage_model.parameters(), args.lr)#, weight_decay=5e-4)
-    import time
-    for args.epoch in range(1, args.epochs + 1):
-        start_time = time.time()
-        loss, train_acc = train_el(hoga_model, elsage_model, train_loader, optimizer, device, dataset)
-        print("--- Train time: %s seconds ---" % (time.time() - start_time))
-        if args.epoch % 1 == 0:
-            val_acc = test_el(hoga_model, elsage_model, val_loader, device, dataset)
-            test_acc = test_el(hoga_model, elsage_model, test_loader, device, dataset)
-            wandb.log({"Epoch": args.epoch, "Loss": loss, "Train_acc": train_acc, "Val_acc":val_acc, "Test_acc": test_acc})
-            print(f'Epoch: {args.epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}')
-    
+    for epoch in range(1, args.epochs + 1):
+        loss, train_acc, train_all_bits = train_el(hoga_model, elsage_model, train_loader, optimizer, device, dataset)
+        if epoch % 1 == 0:
+            val_acc, val_acc_all_bits = test_el(hoga_model, elsage_model, val_loader, device, dataset)
+            test_acc, test_acc_all_bits = test_el(hoga_model, elsage_model, test_loader, device, dataset)
+            wandb.log({"Epoch": epoch, "Loss": loss, "Train_acc": train_acc, "Train_acc_all_bits": train_all_bits, 
+                       "Val_acc":val_acc, "Test_acc": test_acc, "Val_acc_all_bits":val_acc_all_bits, "Test_acc_all_bits": test_acc_all_bits})
+            print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}, Train acc all bits: {train_all_bits:.4f}, Val acc all bits: {val_acc_all_bits:.4f}, Test acc all bits: {test_acc_all_bits:.4f}')
+            
     
 if __name__ == "__main__":
     main()

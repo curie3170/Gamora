@@ -15,7 +15,6 @@ class LogicGatePaddingDataset(InMemoryDataset):
         self.highest_order = highest_order
         super(LogicGatePaddingDataset, self).__init__(root, transform, pre_transform, highest_order)
         self.data, self.slices = torch.load(self.processed_paths[0])
-        #self.max_num_nodes = 0
         print(self.data is not None)
     '''
             - root (str): root directory to store the dataset folder
@@ -32,7 +31,7 @@ class LogicGatePaddingDataset(InMemoryDataset):
 
     @property
     def processed_file_names(self):
-        return ['data_padding.pt']
+        return ['data_logic_padding.pt']
     
     def process(self):
         if not os.path.exists(self.processed_paths[0]):
@@ -44,7 +43,6 @@ class LogicGatePaddingDataset(InMemoryDataset):
             if 'processed' in data_name:
                 pass
             else:
-                #_ = self.find_max_num_nodes()
                 folder = os.path.join(self.root, data_name)
                 bprimtive_path = os.path.join(folder, 'bprimtive')
                 mas_gl_path = os.path.join(folder, 'Mas'+str(self.highest_order)+'.gl')
@@ -61,19 +59,22 @@ class LogicGatePaddingDataset(InMemoryDataset):
                     f.readline()
                     for line in f:
                         in_node1, in_node2, out_node, edge_type = line.strip().split()
-                        in_node1, in_node2, out_node = int(in_node1), int(in_node2), int(in_node2) 
+                        in_node1, in_node2, out_node = int(in_node1), int(in_node2), int(out_node) 
+
                         if edge_type == '00': #Pi
-                            node_feat[out_node] = [0, 0, 0, 0]
+                            edge_index.append([in_node1, out_node])
+                            node_feat[out_node] = [99, 99, 99, 99]
                         elif edge_type == '11': #Po
-                            node_feat[out_node] = [1, 1, 1, 1]
+                            edge_index.append([in_node1, out_node])
+                            node_feat[out_node] = [-99, -99, -99, -99]
                         elif edge_type == '01': #AND     
                             edge_index.append([in_node1, out_node])
                             edge_index.append([in_node2, out_node])
-                            node_feat[out_node] = [0, 1, 0, 1]
-                        else: #edge_type == '10': #XOR     
+                            node_feat[out_node] = [0, 1, 0, 1]#[0, 99, 0, 99]
+                        elif edge_type == '10': #XOR     
                             edge_index.append([in_node1, out_node])
                             edge_index.append([in_node2, out_node])
-                            node_feat[out_node] = [1, 0, 1, 0]
+                            node_feat[out_node] = [1, 0, 1, 0]#[99, 0, 99, 0]
 
                 edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
                 # Convert x_dict to a tensor
@@ -81,7 +82,6 @@ class LogicGatePaddingDataset(InMemoryDataset):
                 x = torch.full((num_nodes, 4), 50).float()  # Initialize with 50
                 for node, features in node_feat.items():
                     x[node-1] = torch.tensor(features).float()
-                    
                 pad_size = self.max_num_nodes - num_nodes
                 # Pad node features
                 x_padded = torch.cat([x, torch.full((pad_size, x.size(1)), 50.0)], dim=0)
@@ -109,14 +109,14 @@ class LogicGatePaddingDataset(InMemoryDataset):
                 pass
             else:
                 folder = os.path.join(self.root, data_name)
-                mas_el_path = os.path.join(folder, 'Mas'+str(self.highest_order)+'.el')
+                mas_gl_path = os.path.join(folder, 'Mas'+str(self.highest_order)+'.gl')
                 edge_index = []
-                with open(mas_el_path, 'r') as f:
+                with open(mas_gl_path, 'r') as f:
                     f.readline()
                     for line in f:
-                        u, v, _, _ = line.strip().split()
-                        u, v = int(u)-1, int(v)-1 # Convert to zero-based index
-                        edge_index.append([u, v])
+                        in1, in2, out, _ = line.strip().split()
+                        edge_index.append([int(in1), int(out)])
+                        edge_index.append([int(in2), int(out)])
                 edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
                 # Convert x_dict to a tensor
                 num_nodes = edge_index.max().item() + 1
@@ -127,7 +127,8 @@ class LogicGatePaddingDataset(InMemoryDataset):
         return max_num_nodes
     
 if __name__ == '__main__':
-    dataset = LogicGatePaddingDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16) #, transform=T.ToSparseTensor())
+    dataset = LogicGatePaddingDataset(root = '/home/curie/masGen/DataGen/dataset8', highest_order = 8) #, transform=T.ToSparseTensor()
+    print(dataset.find_max_num_nodes())
     print(dataset[0])
     print(dataset[1])
     '''

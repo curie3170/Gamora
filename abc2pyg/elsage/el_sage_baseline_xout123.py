@@ -16,6 +16,8 @@ from torch_geometric.loader import DataLoader
 import torch_geometric.transforms as T
 from dataset_prep.dataset_el_pyg import EdgeListDataset
 import wandb
+import time
+
 def initialize_wandb(args):
     if args.wandb:
         wandb.init(
@@ -71,7 +73,7 @@ class GraphSAGE(torch.nn.Module):
         return x #torch.Size([batch, 16])
 
 def train(gamora_model, model, loader, optimizer, device, dataset):
-    import time
+    start_time = time.time()
     gamora_model.eval()
     model.train()
     total_loss = 0
@@ -85,15 +87,20 @@ def train(gamora_model, model, loader, optimizer, device, dataset):
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-    train_acc = test(gamora_model, model, loader, device, dataset)
-    return total_loss / len(loader), train_acc
+    print("--- Train time: %s seconds ---" % (time.time() - start_time))
+    start_time = time.time()
+    train_acc, train_acc_all_bits = test(gamora_model, model, loader, device, dataset)
+    print("--- Test time: %s seconds ---" % (time.time() - start_time))
+    return total_loss / len(loader), train_acc, train_acc_all_bits
 
 @torch.no_grad()
 def test(gamora_model, model, loader, device, dataset):
     gamora_model.eval()
     model.eval()
     correct = 0
+    correct_all = 0
     total = 0
+    total_all = 0
     for data in loader:
         data = data.to(device)
         out1, out2, out3 = gamora_model.forward_nosampler(data.x, data.adj_t, device)
@@ -101,8 +108,10 @@ def test(gamora_model, model, loader, device, dataset):
         out = torch.sigmoid(out)
         pred = (out > 0.5).float()
         correct += (pred == data.y.reshape(-1, dataset.num_classes)).sum().item()
+        correct_all+= torch.eq(pred, data.y.reshape(-1, dataset.num_classes)).all(dim=1).sum().item()
         total += data.y.reshape(-1, dataset.num_classes).numel()
-    return correct / total #len(loader.dataset) /len(loader.dataset[0].y)
+        total_all += len(torch.eq(pred, data.y.reshape(-1, dataset.num_classes)).all(dim=1))
+    return correct / total, correct_all / total_all
 
 def main(args):
     initialize_wandb(args)
@@ -133,11 +142,13 @@ def main(args):
     for epoch in range(1, epochs + 1):
         loss, train_acc = train(model, train_loader, optimizer, device, dataset)
         if epoch % 1 == 0:
-            val_acc = test(model, val_loader, device, dataset)
-            test_acc = test(model, test_loader, device, dataset)
-            wandb.log({"Epoch": epoch, "Loss": loss, "Train_acc": train_acc, "Val_acc":val_acc, "Test_acc": test_acc})
-            print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}')
-
+            val_acc, val_acc_all_bits = test(model, val_loader, device, dataset)
+            test_acc, test_acc_all_bits = test(model, test_loader, device, dataset)
+            wandb.log({"Epoch": epoch, "Loss": loss, "Train_acc": train_acc, "Train_acc_all_bits": train_all_bits, 
+                       "Val_acc":val_acc, "Test_acc": test_acc, "Val_acc_all_bits":val_acc_all_bits, "Test_acc_all_bits": test_acc_all_bits})
+            print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}, Train acc all bits: {train_all_bits:.4f}, Val acc all bits: {val_acc_all_bits:.4f}, Test acc all bits: {test_acc_all_bits:.4f}')
+            
+    
 if __name__ == '__main__':
     import argparse 
     parser = argparse.ArgumentParser(description='ELGraphSAGE Training')
