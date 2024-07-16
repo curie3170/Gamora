@@ -25,9 +25,15 @@ from elsage.el_sage_ensemble_xout123_cone import train_ensemble
 from elsage.el_sage_ensemble_xout123_cone import test_ensemble_bit 
 from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader
-
-
 import wandb
+def set_seed(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 def initialize_wandb(args):
     if args.wandb:
         wandb.init(
@@ -153,6 +159,7 @@ class SAGE_MULT(torch.nn.Module):
 def main():
     #args for gamora
     parser = argparse.ArgumentParser(description='mult16')
+    parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--num_layers', type=int, default=4)
     parser.add_argument('--hidden_channels', type=int, default=32)
@@ -173,6 +180,7 @@ def main():
     
     args = parser.parse_args()
     initialize_wandb(args)
+    set_seed(args.seed)
     
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

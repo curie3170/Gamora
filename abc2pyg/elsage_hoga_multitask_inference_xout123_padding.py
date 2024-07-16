@@ -30,8 +30,16 @@ from torch_geometric.data import DataLoader
 from hoga_model import HOGA
 from hoga_utils import *
 import wandb
-
 from torch.utils.data import Dataset
+
+def set_seed(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    
 class ProcessedSparseDataset(Dataset):
     def __init__(self, raw_dataset, args):
         self.data = []
@@ -68,6 +76,7 @@ def initialize_wandb(args):
 def main():
     parser = argparse.ArgumentParser(description='elsage_hoga')
     parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic'])
+    parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--device', type=int, default=0)
     #args for HOGA
     parser.add_argument('--dropout', type=float, default=0.5)
@@ -92,6 +101,7 @@ def main():
     parser.add_argument('--wandb', action='store_true', help='Enable wandb logging')
     args = parser.parse_args()
     initialize_wandb(args)
+    set_seed(args.seed)
     
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
