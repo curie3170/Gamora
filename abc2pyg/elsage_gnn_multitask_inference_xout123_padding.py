@@ -25,6 +25,7 @@ from sklearn.model_selection import train_test_split
 #from dataset_prep.dataloader_padding import DataLoader, Custom_Collater
 from dataset_prep.dataset_el_pyg_padding import EdgeListPaddingDataset
 from dataset_prep.dataset_gl_pyg_padding import LogicGatePaddingDataset
+from dataset_prep.dataset_xor_pyg_padding import XORPaddingDataset
 from torch_geometric.loader import DataLoader
 from datetime import datetime
 
@@ -164,7 +165,7 @@ def main():
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic'])
+    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic', 'xor'])
     #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
     parser.add_argument('--hidden_channels', type=int, default=32)
@@ -193,6 +194,8 @@ def main():
         dataset = EdgeListPaddingDataset(root = args.root, highest_order = args.highest_order)
     elif  args.datatype == 'logic':
         dataset = LogicGatePaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor':
+        dataset = XORPaddingDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
     data = T.ToSparseTensor()(data)
     split_idx = 0 #random

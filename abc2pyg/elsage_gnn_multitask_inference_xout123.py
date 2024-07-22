@@ -10,6 +10,7 @@ from torch_geometric.nn import SAGEConv, global_mean_pool, BatchNorm
 
 from dataset_prep import PygNodePropPredDataset, Evaluator, EdgeListDataset
 from dataset_prep.dataset_gl_pyg import LogicGateDataset
+from dataset_prep.dataset_xor_pyg import XORDataset
 
 from logger import Logger
 from tqdm import tqdm
@@ -160,7 +161,7 @@ class SAGE_MULT(torch.nn.Module):
 def main():
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
-    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic'])
+    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic', 'xor'])
     parser.add_argument('--device', type=int, default=0)
     #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
@@ -190,6 +191,8 @@ def main():
         dataset = EdgeListDataset(root = args.root, highest_order = args.highest_order)
     elif  args.datatype == 'logic':
         dataset = LogicGateDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor':
+        dataset = XORDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
     print(data)
     data = T.ToSparseTensor()(data)

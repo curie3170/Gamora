@@ -69,6 +69,7 @@ tags
 *.blif
 *.npy
 *.json
+*.pt
 
 word-rev-graphsage/abc/abc
 saver-gate-sizing-gl/*

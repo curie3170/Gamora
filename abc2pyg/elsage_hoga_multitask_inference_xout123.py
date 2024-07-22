@@ -11,6 +11,7 @@ from torch_geometric.nn import SAGEConv, global_mean_pool, BatchNorm
 from dataset_prep import PygNodePropPredDataset, Evaluator
 from dataset_prep.dataset_el_pyg import EdgeListDataset
 from dataset_prep.dataset_gl_pyg import LogicGateDataset
+from dataset_prep.dataset_xor_pyg import XORDataset
 
 from logger import Logger
 from tqdm import tqdm
@@ -76,7 +77,7 @@ def initialize_wandb(args):
 def main():
     parser = argparse.ArgumentParser(description='elsage_hoga')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
-    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic'])
+    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic', 'xor'])
     #args for HOGA
     parser.add_argument('--device', type=int, default=0)
 
@@ -111,6 +112,8 @@ def main():
         dataset = EdgeListDataset(root = args.root, highest_order = args.highest_order)
     elif  args.datatype == 'logic':
         dataset = LogicGateDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor':
+        dataset = XORDataset(root = args.root, highest_order = args.highest_order)
     processed_dataset = ProcessedSparseDataset(dataset, args) 
 
     train_dataset, test_dataset = train_test_split(processed_dataset, test_size=0.2, random_state=42)

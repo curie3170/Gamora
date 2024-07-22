@@ -11,6 +11,7 @@ from torch_geometric.nn import SAGEConv, global_mean_pool, BatchNorm
 from dataset_prep import PygNodePropPredDataset, Evaluator
 from dataset_prep.dataset_el_pyg_padding import EdgeListPaddingDataset
 from dataset_prep.dataset_gl_pyg_padding import LogicGatePaddingDataset
+from dataset_prep.dataset_xor_pyg_padding import XORPaddingDataset
 
 from logger import Logger
 from tqdm import tqdm
@@ -75,7 +76,7 @@ def initialize_wandb(args):
 
 def main():
     parser = argparse.ArgumentParser(description='elsage_hoga')
-    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic'])
+    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic', 'xor'])
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--device', type=int, default=0)
     #args for HOGA
@@ -85,7 +86,7 @@ def main():
     parser.add_argument('--directed', action='store_true')
     parser.add_argument('--hoga_hidden_channels', type=int, default=256)
     parser.add_argument('--hoga_num_layers', type=int, default=1)
-    parser.add_argument('--num_hops', type=int, default=8)
+    parser.add_argument('--num_hops', type=int, default=3)
     parser.add_argument('--heads', type=int, default=8)
     
     #args for elsage
@@ -97,7 +98,7 @@ def main():
     #parser.add_argument('--num_layers', type=int, default=4) # x + gamora_output
     #parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--hidden_dim', type=int, default=75, help='Hidden dimension size')
-    parser.add_argument('--batch_size', type=int, default=2, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size')
     parser.add_argument('--wandb', action='store_true', help='Enable wandb logging')
     args = parser.parse_args()
     initialize_wandb(args)
@@ -111,6 +112,8 @@ def main():
         dataset = EdgeListPaddingDataset(root = args.root, highest_order = args.highest_order)
     elif  args.datatype == 'logic':
         dataset = LogicGatePaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor':
+        dataset = XORPaddingDataset(root = args.root, highest_order = args.highest_order)
     processed_dataset = ProcessedSparseDataset(dataset, args) 
 
     train_dataset, test_dataset = train_test_split(processed_dataset, test_size=0.2, random_state=42)
