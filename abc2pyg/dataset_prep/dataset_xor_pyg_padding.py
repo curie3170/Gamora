@@ -15,7 +15,7 @@ class XORPaddingDataset(InMemoryDataset):
         self.highest_order = highest_order
         super(XORPaddingDataset, self).__init__(root, transform, pre_transform, highest_order)
         self.data, self.slices = torch.load(self.processed_paths[0])
-        print(self.data is not None)
+
     '''
             - root (str): root directory to store the dataset folder
             - transform, pre_transform (optional): transform/pre-transform graph objects
@@ -23,7 +23,9 @@ class XORPaddingDataset(InMemoryDataset):
     '''
     @property
     def num_classes(self):
-        return self.highest_order
+        # predicting # of highest_order -1
+        #return self.highest_order -1
+        return self.highest_order  
         
     @property
     def raw_file_names(self):
@@ -52,6 +54,12 @@ class XORPaddingDataset(InMemoryDataset):
                     labels = [int(x) for x in f.read().strip().split()]
                     y = torch.zeros(self.highest_order)
                     y[torch.tensor(labels) - 1] = 1  # 1-hot encoding
+
+                    #predict # of highest order -1
+                    # y = torch.zeros(self.highest_order-1)
+                    # if len(labels) > 1:
+                    #      y[torch.tensor(labels[:-1]) - 1] = 1  # 1-hot encoding
+                    
                 # Load graph edges and node features
                 edge_index = []
                 node_feat = {}
@@ -60,31 +68,27 @@ class XORPaddingDataset(InMemoryDataset):
                     for line in f:
                         in_node1, in_node2, out_node, edge_type = line.strip().split()
                         in_node1, in_node2, out_node = int(in_node1), int(in_node2), int(out_node) 
-
-                        if edge_type == '00': #Pi
-                            edge_index.append([in_node1, out_node])
-                            node_feat[out_node] = [99, 99, 99, 99]
-                        elif edge_type == '11': #Po
-                            edge_index.append([in_node1, out_node])
-                            node_feat[out_node] = [-99, -99, -99, -99]
-                        # elif edge_type == '01': #AND     
-                        #     edge_index.append([in_node1, out_node])
-                        #     edge_index.append([in_node2, out_node])
-                        #     node_feat[out_node] = [0, 1, 0, 1]#[0, 99, 0, 99]
-                        elif edge_type == '10': #XOR     
-                            edge_index.append([in_node1, out_node])
-                            edge_index.append([in_node2, out_node])
-                            node_feat[out_node] = [1, 0, 1, 0]#[99, 0, 99, 0]
+                        edge_index.append([in_node1, out_node])
+                        edge_index.append([in_node2, out_node])
+                        feat1, feat2, level = edge_type.strip().split(',')
+                        if int(feat1) == 99:
+                            node_feat[out_node] = [99, 99, int(level), int(level)]
+                        elif int(feat1) == -99:
+                            node_feat[out_node] = [-99, -99, int(level), int(level)]
+                        else:
+                            #feat1 = format(int(feat1), f'0{self.highest_order}b')
+                            #feat2 = format(int(feat1), f'0{self.highest_order}b')
+                            node_feat[out_node] = [int(feat1), int(feat2), int(level), int(level)]
 
                 edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
                 # Convert x_dict to a tensor
                 num_nodes = edge_index.max().item() + 1
-                x = torch.full((num_nodes, 4), 50).float()  # Initialize with 50
+                x = torch.full((num_nodes, 4), -1).float()  # Initialize with -1
                 for node, features in node_feat.items():
-                    x[node-1] = torch.tensor(features).float()
+                    x[node] = torch.tensor(features).float()
                 pad_size = self.max_num_nodes - num_nodes
                 # Pad node features
-                x_padded = torch.cat([x, torch.full((pad_size, x.size(1)), 50.0)], dim=0)
+                x_padded = torch.cat([x, torch.full((pad_size, x.size(1)), -1)], dim=0)
                 # Pad edge indices
                 edge_index_padded = edge_index
                 edge_index_padded = torch.cat([edge_index_padded, torch.tensor([[num_nodes + i, num_nodes + i] for i in range(pad_size)], dtype=torch.long).t().contiguous()], dim=1)
@@ -127,7 +131,7 @@ class XORPaddingDataset(InMemoryDataset):
         return max_num_nodes
     
 if __name__ == '__main__':
-    dataset = XORPaddingDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16) #, transform=T.ToSparseTensor()
+    dataset = XORPaddingDataset(root = '/home/curie/masGen/DataGen/dataset8', highest_order = 8) #, transform=T.ToSparseTensor()
     print(dataset.find_max_num_nodes())
     print(dataset[0])
     print(dataset[1])

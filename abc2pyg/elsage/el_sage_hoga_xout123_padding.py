@@ -9,8 +9,7 @@ from torch_sparse import SparseTensor
 from sklearn.model_selection import train_test_split
 from torch.nn import Linear
 from torch_geometric.data import DataLoader
-import torch_geometric.transforms as T
-from dataset_prep.dataset_el_pyg import EdgeListDataset
+
 import time
 
 import wandb
@@ -114,3 +113,25 @@ def test(hoga_model, model, loader, device, dataset):
         total_all += len(torch.eq(pred, data.y.reshape(-1, dataset.num_classes)).all(dim=1))
     return correct / total, correct_all / total_all
 
+# @torch.no_grad()
+# def test(hoga_model, model, loader, device, dataset):
+#     hoga_model.eval()
+#     model.eval()
+#     correct = 0
+#     correct_all = 0
+#     total = 0
+#     total_all = 0
+#     for data in loader:
+#         data = data.to(device)
+#         out1, out2, out3, _ = hoga_model(data.x)
+#         out = model(data, [out1, out2, out3])
+#         out = torch.sigmoid(out)
+#         pred = (out > 0.5).float()
+#         pred = pred[:, :-1]
+#         print(pred.shape)
+#         y = data.y.reshape(-1, dataset.num_classes)[:, :-1]
+#         correct += (pred == y).sum().item()
+#         correct_all+= torch.eq(pred, y).all(dim=1).sum().item()
+#         total += y.numel()
+#         total_all += len(torch.eq(pred, y).all(dim=1))
+#     return correct / total, correct_all / total_all

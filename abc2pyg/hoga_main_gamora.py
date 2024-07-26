@@ -168,7 +168,7 @@ def main():
 
     ## load pre-trained model
     if args.save_model:
-        model_name = f'models/hoga_{design_name}_{args.design}.pt'
+        model_name = f'models/hoga_{design_name}_{args.design}_{args.num_hops}.pt'
         checkpoint = torch.load(model_name)
         model.load_state_dict(checkpoint['model_state_dict'])
 

@@ -23,7 +23,9 @@ class LogicGatePaddingDataset(InMemoryDataset):
     '''
     @property
     def num_classes(self):
-        return self.highest_order
+        # predicting # of highest_order -1
+        #return self.highest_order -1
+        return self.highest_order  
         
     @property
     def raw_file_names(self):
@@ -52,6 +54,10 @@ class LogicGatePaddingDataset(InMemoryDataset):
                     labels = [int(x) for x in f.read().strip().split()]
                     y = torch.zeros(self.highest_order)
                     y[torch.tensor(labels) - 1] = 1  # 1-hot encoding
+                    #predict # of highest order -1
+                    # y = torch.zeros(self.highest_order-1)
+                    # if len(labels) > 1:
+                    #      y[torch.tensor(labels[:-1]) - 1] = 1  # 1-hot encoding
                 # Load graph edges and node features
                 edge_index = []
                 node_feat = {}

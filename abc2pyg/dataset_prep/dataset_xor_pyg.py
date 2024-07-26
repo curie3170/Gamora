@@ -57,30 +57,27 @@ class XORDataset(InMemoryDataset):
                     for line in f:
                         in_node1, in_node2, out_node, edge_type = line.strip().split()
                         in_node1, in_node2, out_node = int(in_node1), int(in_node2), int(out_node) 
+                        edge_index.append([in_node1, out_node])
+                        edge_index.append([in_node2, out_node])
+                        feat1, feat2, level = edge_type.strip().split(',')
+                        if int(feat1) == 99:
+                            node_feat[out_node] = [99, 99, int(level), int(level)]
+                        elif int(feat1) == -99:
+                            node_feat[out_node] = [-99, -99, int(level), int(level)]
+                        else:
+                            #feat1 = format(int(feat1), f'0{self.highest_order}b')
+                            #feat2 = format(int(feat1), f'0{self.highest_order}b')
+                            node_feat[out_node] = [int(feat1), int(feat2), int(level), int(level)]
 
-                        if edge_type == '00': #Pi
-                            edge_index.append([in_node1, out_node])
-                            node_feat[out_node] = [99, 99, 99, 99]
-                        elif edge_type == '11': #Po
-                            edge_index.append([in_node1, out_node])
-                            node_feat[out_node] = [-99, -99, -99, -99]
-                        # elif edge_type == '01': #AND     
-                        #     edge_index.append([in_node1, out_node])
-                        #     edge_index.append([in_node2, out_node])
-                        #     node_feat[out_node] = [0, 1, 0, 1]#[0, 99, 0, 99]
-                        elif edge_type == '10': #XOR     
-                            edge_index.append([in_node1, out_node])
-                            edge_index.append([in_node2, out_node])
-                            node_feat[out_node] = [1, 0, 1, 0]#[99, 0, 99, 0]
 
                 edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
 
                 # Convert x_dict to a tensor
                 num_nodes = edge_index.max().item() + 1
-                x = torch.full((num_nodes, 4), 50).float()  # Initialize with 50
+                x = torch.full((num_nodes, 4), -1).float()  # Initialize with -1
                 
                 for node, features in node_feat.items():
-                    x[node-1] = torch.tensor(features).float()
+                    x[node] = torch.tensor(features).float()
                 
                 # # Check for any uninitialized values
                 #if torch.isnan(x).any():

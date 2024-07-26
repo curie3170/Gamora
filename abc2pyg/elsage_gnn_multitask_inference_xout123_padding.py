@@ -165,7 +165,7 @@ def main():
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic', 'xor'])
+    parser.add_argument('--datatype', type=str, default='xor', choices=['aig', 'logic', 'xor'])
     #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
     parser.add_argument('--hidden_channels', type=int, default=32)
@@ -173,8 +173,8 @@ def main():
     parser.add_argument('--model_path', type=str, default='SAGE_mult8')
     
     #args for elsage
-    parser.add_argument('--root', type=str, default='/home/curie/masGen/DataGen/dataset16', help='Root directory of dataset')
-    parser.add_argument('--highest_order', type=int, default=16, help='Highest order for the EdgeListPaddingDataset')
+    parser.add_argument('--root', type=str, default='/home/curie/masGen/DataGen/dataset8', help='Root directory of dataset')
+    parser.add_argument('--highest_order', type=int, default=8, help='Highest order for the EdgeListPaddingDataset')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=500, help='Number of epochs')
     #parser.add_argument('--num_layers', type=int, default=4) # x + gamora_output

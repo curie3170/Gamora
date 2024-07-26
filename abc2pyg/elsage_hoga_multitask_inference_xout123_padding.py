@@ -76,7 +76,7 @@ def initialize_wandb(args):
 
 def main():
     parser = argparse.ArgumentParser(description='elsage_hoga')
-    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic', 'xor'])
+    parser.add_argument('--datatype', type=str, default='xor', choices=['aig', 'logic', 'xor'])
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--device', type=int, default=0)
     #args for HOGA
