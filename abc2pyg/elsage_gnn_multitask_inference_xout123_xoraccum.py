@@ -22,9 +22,9 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from mlxtend.plotting import plot_confusion_matrix
 import copy
-from elsage.el_sage_baseline_xout123 import GraphSAGE
-from elsage.el_sage_baseline_xout123 import train as train_el
-from elsage.el_sage_baseline_xout123 import test as test_el
+from elsage.el_sage_baseline_xout123_xoraccum import GraphSAGE
+from elsage.el_sage_baseline_xout123_xoraccum import train as train_el
+from elsage.el_sage_baseline_xout123_xoraccum import test as test_el
 from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader
 import wandb
@@ -54,8 +54,27 @@ def initialize_wandb(args):
         )
     else:
         wandb.init(mode="disabled")
-        
 
+class Feat_Reduce(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, dropout):
+        super(Feat_Reduce, self).__init__()
+        self.conv1 = SAGEConv(in_channels, hidden_channels)
+        self.lin1 = Linear(hidden_channels, hidden_channels, bias=False)
+        self.conv2 = SAGEConv(hidden_channels, hidden_channels)
+        self.lin2 = Linear(hidden_channels, out_channels, bias=False)
+        self.dropout = dropout
+    def forward(self, data):
+        x = self.conv1(data.x, data.adj_t)
+        x = self.lin1(x)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.dropout) 
+        x = self.conv2(x, data.adj_t)
+        x = self.lin2(x)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.dropout) 
+        x = torch.sigmoid(x)
+        return x
+        
 class SAGE_MULT(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
@@ -91,7 +110,7 @@ class SAGE_MULT(torch.nn.Module):
             x = self.convs[i]((x, x_target), edge_index)
             x = F.relu(x)
             x = F.dropout(x, p=0.5, training=self.training)
-            
+        
         # print(x[0])
         x = self.linear[0](x)
         x = self.bn0(F.relu(x))
@@ -162,7 +181,7 @@ class SAGE_MULT(torch.nn.Module):
 def main():
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
-    parser.add_argument('--datatype', type=str, default='xor', choices=['aig', 'logic', 'xor', 'xor_accum'])
+    parser.add_argument('--datatype', type=str, default='xor_accum', choices=['xor_accum'])
     parser.add_argument('--device', type=int, default=0)
     #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
@@ -188,14 +207,7 @@ def main():
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     ### evaluation dataset loading
-    if args.datatype == 'aig':
-        dataset = EdgeListDataset(root = args.root, highest_order = args.highest_order)
-    elif  args.datatype == 'logic':
-        dataset = LogicGateDataset(root = args.root, highest_order = args.highest_order)
-    elif  args.datatype == 'xor':
-        dataset = XORDataset(root = args.root, highest_order = args.highest_order)
-    elif  args.datatype == 'xor_accum':
-        dataset = XORAccumDataset(root = args.root, highest_order = args.highest_order)
+    dataset = XORAccumDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
     print(data)
     data = T.ToSparseTensor()(data)
@@ -207,7 +219,9 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
     data = data.to(device)
     
-    gamora_model = SAGE_MULT(data.num_features, args.hidden_channels,
+    featreduce_model = Feat_Reduce(dataset[0].num_node_features, args.hidden_dim, 4, args.dropout).to(device)
+    
+    gamora_model = SAGE_MULT(4, args.hidden_channels,
                      3, args.num_layers,
                      args.dropout).to(device)
 
@@ -220,13 +234,13 @@ def main():
                  dropout=args.dropout
                  ).to(device)
 
-    optimizer = torch.optim.Adam(elsage_model.parameters(), args.learning_rate)#, weight_decay=5e-4)
-    
+    #optimizer = torch.optim.Adam(elsage_model.parameters(), args.learning_rate)#, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(list(featreduce_model.parameters()) + list(elsage_model.parameters()), args.learning_rate)
     for epoch in range(1, args.epochs + 1):
-        loss, train_acc, train_all_bits = train_el(gamora_model, elsage_model, train_loader, optimizer, device, dataset)
+        loss, train_acc, train_all_bits = train_el(featreduce_model, gamora_model, elsage_model, train_loader, optimizer, device, dataset)
         if epoch % 1 == 0:
-            val_acc, val_acc_all_bits = test_el(gamora_model, elsage_model, val_loader, device, dataset)
-            test_acc, test_acc_all_bits = test_el(gamora_model, elsage_model, test_loader, device, dataset)
+            val_acc, val_acc_all_bits = test_el(featreduce_model, gamora_model, elsage_model, val_loader, device, dataset)
+            test_acc, test_acc_all_bits = test_el(featreduce_model, gamora_model, elsage_model, test_loader, device, dataset)
             wandb.log({"Epoch": epoch, "Loss": loss, "Train_acc": train_acc, "Train_acc_all_bits": train_all_bits, 
                        "Val_acc":val_acc, "Test_acc": test_acc, "Val_acc_all_bits":val_acc_all_bits, "Test_acc_all_bits": test_acc_all_bits})
             print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}, Train acc all bits: {train_all_bits:.4f}, Val acc all bits: {val_acc_all_bits:.4f}, Test acc all bits: {test_acc_all_bits:.4f}')

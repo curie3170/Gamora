@@ -9,11 +9,12 @@ from typing import List
 from torch_geometric.loader import DataLoader
 #from loader.dataloader import DataLoader
 from tqdm import tqdm
+import math
 
-class XORDataset(InMemoryDataset):
+class XORAccumDataset(InMemoryDataset):
     def __init__(self, root, transform=None, pre_transform=None, highest_order = 16):
         self.highest_order = highest_order
-        super(XORDataset, self).__init__(root, transform, pre_transform, highest_order)
+        super(XORAccumDataset, self).__init__(root, transform, pre_transform, highest_order)
         self.data, self.slices = torch.load(self.processed_paths[0])
     '''
             - root (str): root directory to store the dataset folder
@@ -30,19 +31,24 @@ class XORDataset(InMemoryDataset):
 
     @property
     def processed_file_names(self):
-        return ['data_xor-1.pt']
+        return ['data_xor_accum.pt']
     
     def process(self):
         data_list = []
-
+        if self.highest_order==4:
+            NODE_LENGTH = 20
+        elif self.highest_order==8:
+            NODE_LENGTH = 72
+        elif self.highest_order==16:
+            NODE_LENGTH = 272
         root_folders = sorted(os.listdir(self.root))
-        for data_name in tqdm(root_folders):
+        for data_name in tqdm(root_folders): #[:10000]): #save only 10000 data
             if 'processed' in data_name:
                 pass
             else:
                 folder = os.path.join(self.root, data_name)
                 bprimtive_path = os.path.join(folder, 'bprimtive')
-                mas_xor_path = os.path.join(folder, 'Mas'+str(self.highest_order)+'.xor')
+                mas_xor_path = os.path.join(folder, 'Mas'+str(self.highest_order)+'.xor_add')
 
                 # Load labels
                 with open(bprimtive_path, 'r') as f:
@@ -59,43 +65,32 @@ class XORDataset(InMemoryDataset):
                         in_node1, in_node2, out_node = int(in_node1), int(in_node2), int(out_node) 
                         edge_index.append([in_node1, out_node])
                         edge_index.append([in_node2, out_node])
-                        feat1, feat2, level = edge_type.strip().split(',')
-                        if int(feat1) == 99:
-                            #node_feat[out_node] = [99, 99, int(level), int(level)]
-                            node_feat[out_node] = [-1, -1, int(level), int(level)]
-                        elif int(feat1) == -99:
-                            #node_feat[out_node] = [-99, -99, int(level), int(level)]
-                            node_feat[out_node] = [-1, -1, int(level), int(level)]
-                        else:
-                            node_feat[out_node] = [int(feat1), int(feat2), int(level), int(level)]
-
-
+                        pi_feat = [-1] * NODE_LENGTH
+                        edge_type = list(edge_type.strip().split(','))
+                        edge_type = [int(i) for i in edge_type[:-1]]
+                        pi_feat[:len(edge_type)] = edge_type
+                        level_feat = format(int(edge_type[-1]), f'0{int(math.log2(self.highest_order))}b')
+                        level_feat = [int(bit) for bit in level_feat]
+                        node_feat[out_node] = pi_feat + level_feat
                 edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
 
                 # Convert x_dict to a tensor
                 num_nodes = edge_index.max().item() + 1
-                x = torch.full((num_nodes, 4), -1).float()  # Initialize with -1
+                x = torch.full((num_nodes, NODE_LENGTH+len(level_feat)), -1).float()  # Initialize with -1
                 
                 for node, features in node_feat.items():
                     x[node] = torch.tensor(features).float()
                 
-                # # Check for any uninitialized values
-                #if torch.isnan(x).any():
-                # if 50 in x:
-                #     raise ValueError("Uninitialized node features found in x tensor")
-                
-                # Create Data object
-                #num_nodes = edge_index.max().item() + 1
                 adj_t = SparseTensor.from_edge_index(edge_index)
                 data = Data(edge_index=edge_index, y=y, x=x, adj_t=adj_t)
                 data = data if self.pre_transform is None else self.pre_transform(data)
                 data_list.append(data)
-
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
+        
 
 if __name__ == '__main__':
-    dataset = XORDataset(root = '/home/curie/masGen/DataGen/dataset8', highest_order = 8) #, transform=T.ToSparseTensor())
+    dataset = XORAccumDataset(root = '/home/curie/masGen/DataGen/dataset16', highest_order = 16) #, transform=T.ToSparseTensor())
     print(dataset[0])
     print(dataset[1])
     print(dataset[2])
