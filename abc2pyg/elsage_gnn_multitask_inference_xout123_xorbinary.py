@@ -11,7 +11,8 @@ from torch_geometric.nn import SAGEConv, global_mean_pool, BatchNorm
 from dataset_prep import PygNodePropPredDataset, Evaluator, EdgeListDataset
 from dataset_prep.dataset_gl_pyg import LogicGateDataset
 from dataset_prep.dataset_xor_pyg import XORDataset
-from dataset_prep.dataset_xor_accum_pyg import XORAccumDataset
+from dataset_prep.dataset_xor_binary_pyg import XORBinaryDataset
+from dataset_prep.dataset_xor_binary_po_pyg import XORBinaryPoDataset
 
 from logger import Logger
 from tqdm import tqdm
@@ -22,9 +23,9 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from mlxtend.plotting import plot_confusion_matrix
 import copy
-from elsage.el_sage_baseline_xout123_xoraccum import GraphSAGE
-from elsage.el_sage_baseline_xout123_xoraccum import train as train_el
-from elsage.el_sage_baseline_xout123_xoraccum import test as test_el
+from elsage.el_sage_baseline_xout123_xorbinary import GraphSAGE
+from elsage.el_sage_baseline_xout123_xorbinary import train as train_el
+from elsage.el_sage_baseline_xout123_xorbinary import test as test_el
 from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader
 import wandb
@@ -181,7 +182,7 @@ class SAGE_MULT(torch.nn.Module):
 def main():
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
-    parser.add_argument('--datatype', type=str, default='xor_accum', choices=['xor_accum'])
+    parser.add_argument('--datatype', type=str, default='xor_binary', choices=['xor_binary', 'xor_binary_po'])
     parser.add_argument('--device', type=int, default=0)
     #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
@@ -206,11 +207,13 @@ def main():
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
+
     ### evaluation dataset loading
-    dataset = XORAccumDataset(root = args.root, highest_order = args.highest_order)
-    ### evaluation dataset loading
-    if args.datatype == 'xor_accum':
-        dataset = XORAccumDataset(root = args.root, highest_order = args.highest_order)
+    if args.datatype == 'xor_binary':
+        dataset = XORBinaryDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor_binary_po':
+        dataset = XORBinaryPoDataset(root = args.root, highest_order = args.highest_order)
+\
     data = dataset[0]
     print(data)
     data = T.ToSparseTensor()(data)

@@ -26,6 +26,9 @@ from sklearn.model_selection import train_test_split
 from dataset_prep.dataset_el_pyg_padding import EdgeListPaddingDataset
 from dataset_prep.dataset_gl_pyg_padding import LogicGatePaddingDataset
 from dataset_prep.dataset_xor_pyg_padding import XORPaddingDataset
+from dataset_prep.dataset_xor_binary_pyg_padding import XORBinaryPaddingDataset
+from dataset_prep.dataset_xor_binary_po_pyg_padding import XORBinaryPoPaddingDataset
+from dataset_prep.dataset_xor_binary_nodefeat_pyg_padding import XORBinaryNodefeatPaddingDataset
 from torch_geometric.loader import DataLoader
 from datetime import datetime
 
@@ -165,7 +168,7 @@ def main():
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--datatype', type=str, default='xor', choices=['aig', 'logic', 'xor'])
+    parser.add_argument('--datatype', type=str, default='xor', choices=['aig', 'logic', 'xor', 'xor_binary', 'xor_binary_po', 'xor_binary_nodefeat'])
     #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
     parser.add_argument('--hidden_channels', type=int, default=32)
@@ -196,6 +199,12 @@ def main():
         dataset = LogicGatePaddingDataset(root = args.root, highest_order = args.highest_order)
     elif  args.datatype == 'xor':
         dataset = XORPaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor_binary':
+        dataset = XORBinaryPaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor_binary_po':
+        dataset = XORBinaryPoPaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor_binary_nodefeat':
+        dataset = XORBinaryNodefeatPaddingDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
     data = T.ToSparseTensor()(data)
     split_idx = 0 #random

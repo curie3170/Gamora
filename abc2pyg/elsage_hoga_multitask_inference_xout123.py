@@ -12,6 +12,9 @@ from dataset_prep import PygNodePropPredDataset, Evaluator
 from dataset_prep.dataset_el_pyg import EdgeListDataset
 from dataset_prep.dataset_gl_pyg import LogicGateDataset
 from dataset_prep.dataset_xor_pyg import XORDataset
+from dataset_prep.dataset_xor_binary_pyg import XORBinaryDataset
+from dataset_prep.dataset_xor_binary_po_pyg import XORBinaryPoDataset
+from dataset_prep.dataset_xor_binary_nodefeat_pyg import XORBinaryNodefeatDataset
 
 from logger import Logger
 from tqdm import tqdm
@@ -77,7 +80,7 @@ def initialize_wandb(args):
 def main():
     parser = argparse.ArgumentParser(description='elsage_hoga')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
-    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic', 'xor'])
+    parser.add_argument('--datatype', type=str, default='aig', choices=['aig', 'logic', 'xor', 'xor_binary', 'xor_binary_po', 'xor_binary_nodefeat'])
     #args for HOGA
     parser.add_argument('--device', type=int, default=0)
 
@@ -114,6 +117,12 @@ def main():
         dataset = LogicGateDataset(root = args.root, highest_order = args.highest_order)
     elif  args.datatype == 'xor':
         dataset = XORDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor_binary':
+        dataset = XORBinaryDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor_binary_po':
+        dataset = XORBinaryPoDataset(root = args.root, highest_order = args.highest_order)
+    elif  args.datatype == 'xor_binary_nodefeat':
+        dataset = XORBinaryNodefeatDataset(root = args.root, highest_order = args.highest_order)
     processed_dataset = ProcessedSparseDataset(dataset, args) 
 
     train_dataset, test_dataset = train_test_split(processed_dataset, test_size=0.2, random_state=42)

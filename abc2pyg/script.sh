@@ -59,3 +59,17 @@
 
 #python elsage_gnn_multitask_inference_xout123.py --root /home/curie/masGen/DataGen/dataset16 --highest_order 16 --datatype xor --wandb
 python elsage_gnn_multitask_inference_xout123_xoraccum.py --root /home/curie/masGen/DataGen/dataset16 --highest_order 16 --datatype xor_accum --wandb
+python elsage_gnn_multitask_inference_xout123_xorbinary.py --root /home/curie/masGen/DataGen/dataset8 --highest_order 8 --datatype xor_binary --wandb
+python elsage_gnn_multitask_inference_xout123_xorbinary.py --root /home/curie/masGen/DataGen/dataset8 --highest_order 8 --datatype xor_binary_po --wandb
+python elsage_hoga_multitask_inference_xout123.py --num_hops 3 --model_path models/hoga_mult32_mult_3.pt --root /home/curie/masGen/DataGen/dataset8 --highest_order 8 --batch_size 32 --datatype xor_binary --wandb
+python elsage_hoga_multitask_inference_xout123_padding.py --num_hops 3 --model_path models/hoga_mult32_mult_3.pt --root /home/curie/masGen/DataGen/dataset8 --highest_order 8 --batch_size 32 --datatype xor_binary --wandb
+python elsage_hoga_multitask_inference_xout123_padding.py --num_hops 3 --model_path models/hoga_mult32_mult_3.pt --root /home/curie/masGen/DataGen/dataset8 --highest_order 8 --batch_size 32 --datatype xor_binary_po --wandb
+
+python elsage_hoga_multitask_inference_xout123.py --num_hops 3 --model_path models/hoga_mult32_mult_3.pt --root /home/curie/masGen/DataGen/dataset8 --highest_order 8 --batch_size 32 --datatype xor_binary_nodefeat --wandb
+python elsage_hoga_multitask_inference_xout123_padding.py --num_hops 3 --model_path models/hoga_mult32_mult_3.pt --root /home/curie/masGen/DataGen/dataset8 --highest_order 8 --batch_size 32 --datatype xor_binary_nodefeat --wandb
+
+python elsage_hoga_multitask_inference_xout123_padding.py --num_hops 1 --model_path models/hoga_mult32_mult_1.pt --root /home/curie/masGen/DataGen/dataset16 --highest_order 16 --batch_size 32 --datatype xor_binary --wandb
+python elsage_hoga_multitask_inference_xout123_padding.py --num_hops 1 --model_path models/hoga_mult32_mult_1.pt --root /home/curie/masGen/DataGen/dataset16 --highest_order 16 --batch_size 32 --datatype xor_binary_po --wandb
+python elsage_hoga_multitask_inference_xout123_padding.py --num_hops 1 --model_path models/hoga_mult32_mult_1.pt --root /home/curie/masGen/DataGen/dataset16 --highest_order 16 --batch_size 32 --datatype xor_binary_nodefeat --wandb
+
+python elsage_hoga_multitask_inference_xout123_padding.py --root /home/curie/masGen/DataGen/dataset16 --highest_order 16 --datatype xor_binary --wandb
