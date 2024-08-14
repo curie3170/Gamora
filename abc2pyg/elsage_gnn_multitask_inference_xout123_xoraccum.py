@@ -55,6 +55,7 @@ def initialize_wandb(args):
     else:
         wandb.init(mode="disabled")
 
+#If # of node_feat is not 4
 class Feat_Reduce(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, dropout):
         super(Feat_Reduce, self).__init__()
