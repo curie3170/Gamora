@@ -12,7 +12,7 @@ from tqdm import tqdm
 import math
 
 class XORBinaryDataset(InMemoryDataset):
-    def __init__(self, root, transform=None, pre_transform=None, highest_order = 16):
+    def __init__(self, root, transform=None, pre_transform=None, highest_order = 8):
         self.highest_order = highest_order
         super(XORBinaryDataset, self).__init__(root, transform, pre_transform, highest_order)
         self.data, self.slices = torch.load(self.processed_paths[0])
@@ -40,6 +40,7 @@ class XORBinaryDataset(InMemoryDataset):
             if 'processed' in data_name:
                 pass
             else:
+                po = []
                 folder = os.path.join(self.root, data_name)
                 bprimtive_path = os.path.join(folder, 'bprimtive')
                 mas_xor_path = os.path.join(folder, 'Mas'+str(self.highest_order)+'.xor_binary')
@@ -60,9 +61,13 @@ class XORBinaryDataset(InMemoryDataset):
                         edge_index.append([in_node1, out_node])
                         edge_index.append([in_node2, out_node])
                         node_feat[out_node] = [int(bit) for bit in edge_type.split(',')]
+                        if in_node2 > out_node: #PO
+                            po.append(out_node)
    
                 edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
-
+                po = sorted(po)
+                po = po[1:] + po[:1] #to match label??
+                po = torch.tensor(po).contiguous()
                 # Convert x_dict to a tensor
                 num_nodes = edge_index.max().item() + 1
                 x = torch.full((num_nodes, 4), -1).float()  # Initialize with -1
@@ -70,7 +75,7 @@ class XORBinaryDataset(InMemoryDataset):
                     x[node] = torch.tensor(features).float()
                 
                 adj_t = SparseTensor.from_edge_index(edge_index)
-                data = Data(edge_index=edge_index, y=y, x=x, adj_t=adj_t)
+                data = Data(edge_index=edge_index, y=y, x=x, adj_t=adj_t, po=po)
                 data = data if self.pre_transform is None else self.pre_transform(data)
                 data_list.append(data)
         data, slices = self.collate(data_list)
@@ -79,7 +84,7 @@ class XORBinaryDataset(InMemoryDataset):
 
 if __name__ == '__main__':
     dataset = XORBinaryDataset(root = '/home/curie/masGen/DataGen/dataset8', highest_order = 8) #, transform=T.ToSparseTensor())
-    print(dataset[0])
+    print(dataset[0].po)
     print(dataset[1])
     print(dataset[2])
     print(dataset[3])

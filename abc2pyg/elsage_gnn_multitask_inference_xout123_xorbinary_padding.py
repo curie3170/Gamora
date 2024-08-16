@@ -1,4 +1,3 @@
-#Feat_Reduce to match # of nodes to '4'
 import argparse
 
 import torch
@@ -10,9 +9,9 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import SAGEConv, global_mean_pool, BatchNorm
 
 from dataset_prep import PygNodePropPredDataset, Evaluator, EdgeListDataset
-from dataset_prep.dataset_gl_pyg import LogicGateDataset
-from dataset_prep.dataset_xor_pyg import XORDataset
-from dataset_prep.dataset_xor_accum_pyg import XORAccumDataset
+from dataset_prep.dataset_xor_binary_pyg_padding import XORBinaryPaddingDataset
+from dataset_prep.dataset_xor_binary_po_pyg_padding import XORBinaryPoPaddingDataset
+from dataset_prep.dataset_xor_binary_nodefeat_pyg_padding import XORBinaryNodefeatPaddingDataset
 
 from logger import Logger
 from tqdm import tqdm
@@ -23,9 +22,9 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from mlxtend.plotting import plot_confusion_matrix
 import copy
-from elsage.el_sage_baseline_xout123_xoraccum import GraphSAGE
-from elsage.el_sage_baseline_xout123_xoraccum import train as train_el
-from elsage.el_sage_baseline_xout123_xoraccum import test as test_el
+from elsage.el_sage_baseline_xout123_extractPO import GraphSAGE
+from elsage.el_sage_baseline_xout123_extractPO import train as train_el
+from elsage.el_sage_baseline_xout123_extractPO import test as test_el
 from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader
 import wandb
@@ -55,8 +54,7 @@ def initialize_wandb(args):
         )
     else:
         wandb.init(mode="disabled")
-
-#If # of node_feat is not 4
+'''
 class Feat_Reduce(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, dropout):
         super(Feat_Reduce, self).__init__()
@@ -76,7 +74,8 @@ class Feat_Reduce(torch.nn.Module):
         x = F.dropout(x, p=self.dropout) 
         x = torch.sigmoid(x)
         return x
-        
+'''
+
 class SAGE_MULT(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
@@ -183,7 +182,7 @@ class SAGE_MULT(torch.nn.Module):
 def main():
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
-    parser.add_argument('--datatype', type=str, default='xor_accum', choices=['xor_accum'])
+    parser.add_argument('--datatype', type=str, default='xor_binary_po', choices=['xor_binary', 'xor_binary_po', 'xor_binary_nodefeat'])
     parser.add_argument('--device', type=int, default=0)
     #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
@@ -208,11 +207,14 @@ def main():
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
+
     ### evaluation dataset loading
-    dataset = XORAccumDataset(root = args.root, highest_order = args.highest_order)
-    ### evaluation dataset loading
-    if args.datatype == 'xor_accum':
-        dataset = XORAccumDataset(root = args.root, highest_order = args.highest_order)
+    if args.datatype == 'xor_binary':
+        dataset = XORBinaryPaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif args.datatype == 'xor_binary_po':
+        dataset = XORBinaryPoPaddingDataset(root = args.root, highest_order = args.highest_order)
+    elif args.datatype == 'xor_binary_nodefeat':
+        dataset = XORBinaryNodefeatPaddingDataset(root = args.root, highest_order = args.highest_order)
     data = dataset[0]
     print(data)
     data = T.ToSparseTensor()(data)
@@ -224,7 +226,9 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
     data = data.to(device)
     
+    '''
     featreduce_model = Feat_Reduce(dataset[0].num_node_features, args.hidden_dim, 4, args.dropout).to(device)
+    '''
     
     gamora_model = SAGE_MULT(4, args.hidden_channels,
                      3, args.num_layers,
@@ -239,13 +243,16 @@ def main():
                  dropout=args.dropout
                  ).to(device)
 
-    #optimizer = torch.optim.Adam(elsage_model.parameters(), args.learning_rate)#, weight_decay=5e-4)
-    optimizer = torch.optim.Adam(list(featreduce_model.parameters()) + list(elsage_model.parameters()), args.learning_rate)
+    optimizer = torch.optim.Adam(elsage_model.parameters(), args.learning_rate)#, weight_decay=5e-4)
+    #optimizer = torch.optim.Adam(list(featreduce_model.parameters()) + list(elsage_model.parameters()), args.learning_rate)
     for epoch in range(1, args.epochs + 1):
-        loss, train_acc, train_all_bits = train_el(featreduce_model, gamora_model, elsage_model, train_loader, optimizer, device, dataset)
+        #loss, train_acc, train_all_bits = train_el(featreduce_model, gamora_model, elsage_model, train_loader, optimizer, device, dataset)
+        loss, train_acc, train_all_bits, train_acc_each_bit = train_el(gamora_model, elsage_model, train_loader, optimizer, device, dataset)
         if epoch % 1 == 0:
-            val_acc, val_acc_all_bits = test_el(featreduce_model, gamora_model, elsage_model, val_loader, device, dataset)
-            test_acc, test_acc_all_bits = test_el(featreduce_model, gamora_model, elsage_model, test_loader, device, dataset)
+            #val_acc, val_acc_all_bits = test_el(featreduce_model, gamora_model, elsage_model, val_loader, device, dataset)
+            val_acc, val_acc_all_bits, val_acc_each_bit = test_el(gamora_model, elsage_model, val_loader, device, dataset)
+            #test_acc, test_acc_all_bits = test_el(featreduce_model, gamora_model, elsage_model, test_loader, device, dataset)
+            test_acc, test_acc_all_bits, test_acc_each_bit = test_el(gamora_model, elsage_model, test_loader, device, dataset)
             wandb.log({"Epoch": epoch, "Loss": loss, "Train_acc": train_acc, "Train_acc_all_bits": train_all_bits, 
                        "Val_acc":val_acc, "Test_acc": test_acc, "Val_acc_all_bits":val_acc_all_bits, "Test_acc_all_bits": test_acc_all_bits})
             print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Test Acc: {test_acc:.4f}, Train acc all bits: {train_all_bits:.4f}, Val acc all bits: {val_acc_all_bits:.4f}, Test acc all bits: {test_acc_all_bits:.4f}')

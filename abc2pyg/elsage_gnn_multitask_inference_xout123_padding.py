@@ -168,7 +168,7 @@ def main():
     parser = argparse.ArgumentParser(description='mult16')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--datatype', type=str, default='xor', choices=['aig', 'logic', 'xor', 'xor_binary', 'xor_binary_po', 'xor_binary_nodefeat'])
+    parser.add_argument('--datatype', type=str, default='xor_binary', choices=['aig', 'logic', 'xor', 'xor_binary', 'xor_binary_po', 'xor_binary_nodefeat'])
     #args for gamora
     parser.add_argument('--num_layers', type=int, default=4)
     parser.add_argument('--hidden_channels', type=int, default=32)

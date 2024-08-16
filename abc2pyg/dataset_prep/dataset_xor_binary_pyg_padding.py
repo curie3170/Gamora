@@ -42,6 +42,7 @@ class XORBinaryPaddingDataset(InMemoryDataset):
             if 'processed' in data_name:
                 pass
             else:
+                po = []
                 folder = os.path.join(self.root, data_name)
                 bprimtive_path = os.path.join(folder, 'bprimtive')
                 mas_xor_path = os.path.join(folder, 'Mas'+str(self.highest_order)+'.xor_binary')
@@ -62,9 +63,13 @@ class XORBinaryPaddingDataset(InMemoryDataset):
                         edge_index.append([in_node1, out_node])
                         edge_index.append([in_node2, out_node])
                         node_feat[out_node] = [int(bit) for bit in edge_type.split(',')]
+                        if in_node2 > out_node: #PO
+                            po.append(out_node)
    
                 edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
-
+                po = sorted(po)
+                po = po[1:] + po[:1] #to match label??
+                po = torch.tensor(po).contiguous()
                 # Convert x_dict to a tensor
                 num_nodes = edge_index.max().item() + 1
                 x = torch.full((num_nodes, 4), -1).float()  # Initialize with -1
@@ -81,7 +86,7 @@ class XORBinaryPaddingDataset(InMemoryDataset):
                 adj_t_padded = adj_t.to_dense()
                 adj_t_padded = torch.nn.functional.pad(adj_t_padded, (0, pad_size, 0, pad_size), value=0)
                 adj_t_padded = SparseTensor.from_dense(adj_t_padded)
-                padded_data = Data(x=x_padded, edge_index=edge_index_padded, y=y, adj_t=adj_t_padded)
+                padded_data = Data(x=x_padded, edge_index=edge_index_padded, y=y, adj_t=adj_t_padded, po=po)
                 padded_data_list.append(padded_data)
 
         data, slices = self.collate(padded_data_list)
@@ -116,8 +121,8 @@ class XORBinaryPaddingDataset(InMemoryDataset):
     
 
 if __name__ == '__main__':
-    dataset = XORBinaryDataset(root = '/home/curie/masGen/DataGen/dataset8', highest_order = 8) #, transform=T.ToSparseTensor())
-    print(dataset[0])
+    dataset = XORBinaryPaddingDataset(root = '/home/curie/masGen/DataGen/dataset8', highest_order = 8) #, transform=T.ToSparseTensor())
+    print(dataset[0].po)
     print(dataset[1])
     print(dataset[2])
     print(dataset[3])
